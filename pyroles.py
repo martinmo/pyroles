@@ -1,9 +1,14 @@
+"""A high-level, purely educational illustration of the RoleVM role dispatch."""
+
 from functools import partial
 
+# public API:
+__all__ = ["lift", "proceed", "RoleType", "Compound"]
 
 _compounds = dict()
 
 def lift(obj):
+    """Return the global compound object for the given object."""
     try:
         return _compounds[obj]
     except KeyError:
@@ -11,33 +16,31 @@ def lift(obj):
         return _compounds[obj]
 
 
-def create_bridge_method(name):
-    """
-    Create a callable to be used as a drop-in for missing role methods.
+def proceed(name, roles, compound, *args, **kwargs):
+    """Invoke the next method in the current dispatch context."""
+    func = _lookup(name, roles[1:], compound)
+    return func(*args, **kwargs)
 
-    The callable just calls proceed().
-    """
+
+def _lookup(name, roles, compound):
+    """Return a callable representing the next role or core method with the given name."""
+    if roles:
+        func = getattr(roles[0], name, _create_bridge_method(name))
+        # role methods have a different calling convention, and expect
+        # the dispatch context and the compound object as arguments:
+        return partial(func, roles, compound)
+    return getattr(compound.core, name)
+
+
+def _create_bridge_method(name):
+    """Create a drop-in callable for a missing role method with the given name."""
     def bridge(roles, compound, *args, **kwargs):
         return proceed(name, roles, compound, *args, **kwargs)
     return bridge
 
 
-def proceed(name, roles, compound, *args, **kwargs):
-    """Invoke the next method in the current dispatch context."""
-    func = lookup(name, roles[1:], compound)
-    return func(*args, **kwargs)
-
-
-def lookup(name, roles, compound):
-    """This method returns 2-ary 'handles' in every case."""
-    if roles:
-        func = getattr(roles[0], name, create_bridge_method(name))
-        return partial(func, roles, compound)
-    return getattr(compound.core, name)
-
-
 class RoleType:
-    pass
+    """Empty marker class to distinguish natural and role types."""
 
 
 class Compound:
@@ -59,7 +62,8 @@ class Compound:
         self.roles = []
 
     def __getattr__(self, name):
-        return lookup(name, self.roles[:], self)
+        """Lookup attributes in roles (if any), or in the core object."""
+        return _lookup(name, self.roles[:], self)
 
     def __repr__(self):
-        return "Compound(%s)" % self.core
+        return "Compound(%r)" % self.core
