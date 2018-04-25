@@ -13,6 +13,10 @@ class Core:
         print('%r::method2()' % self)
         _(self).method1("delegated from %r" % self)
 
+    def method3(self, arg):
+        print('%r::method3(%s)' % (self, arg))
+        return "argument: " + arg
+
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, self.name)
 
@@ -40,6 +44,13 @@ class RoleC(RoleA):
     def method2(self, roles, compound):
         print("%r::method2()" % self)
         compound.method1("delegated from %r" % self)
+
+
+class RoleD(RoleA):
+    def method1(self, roles, compound, arg):
+        print("%r::method1(%s)" % (self, arg))
+        proceed("method1", roles, compound, arg)
+        proceed("method1", roles, compound, arg)
 
 
 def scenario1():
@@ -71,8 +82,22 @@ def scenario4():
     core.method2()
 
 
+def scenario5():
+    core = _(Core("core5"))
+    core.add_role(RoleD("role_d1"))
+    core.add_role(RoleA("role_c1"))
+    core.method1("test")
+
+
+def scenario6():
+    core = _(Core("core6"))
+    core.add_role(RoleA("role_a1"))
+    core.add_role(RoleB("role_b1"))
+    print(core.method3("some value"))
+
+
 def main():
-    scenarios = [scenario1, scenario2, scenario3, scenario4]
+    scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6]
     for scenario in scenarios:
         print("### %s" % scenario.__name__)
         scenario()

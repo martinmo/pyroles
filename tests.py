@@ -37,4 +37,17 @@ assert_output_equals(scenario4, """\
     Core(core4)::method1(delegated from RoleC(role_c1))
 """)
 
+assert_output_equals(scenario5, """\
+    RoleD(role_d1)::method1(test)
+    RoleA(role_c1)::method1(test)
+    Core(core5)::method1(test)
+    RoleA(role_c1)::method1(test)
+    Core(core5)::method1(test)
+""")
+
+assert_output_equals(scenario6, """\
+    Core(core6)::method3(some value)
+    argument: some value
+""")
+
 print("OK")
