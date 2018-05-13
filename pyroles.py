@@ -25,14 +25,15 @@ def proceed(name, roles, compound, *args, **kwargs):
 def _lookup(name, roles, compound):
     """Return a callable representing the next role or core method with the given name."""
     if roles:
-        func = getattr(roles[0], name, _create_bridge_method(name))
+        # bridge missing method in the role, if necessary
+        func = getattr(roles[0], name, _create_missing_method(name))
         # role methods have a different calling convention, and expect
         # the dispatch context and the compound object as arguments:
         return partial(func, roles, compound)
     return getattr(compound.core, name)
 
 
-def _create_bridge_method(name):
+def _create_missing_method(name):
     """Create a drop-in callable for a missing role method with the given name."""
     def bridge(roles, compound, *args, **kwargs):
         return proceed(name, roles, compound, *args, **kwargs)
